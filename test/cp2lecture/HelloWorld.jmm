@@ -1,0 +1,18 @@
+import io;
+
+class Arithmetic_and {
+	public static void main(String[] args) {
+		boolean a;
+
+		a = true && false;
+
+		if(true && false) {
+			io.print(1);
+		} else {
+			io.print(0);
+		}
+
+	}
+}
+
+

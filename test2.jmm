@@ -1,0 +1,17 @@
+import io;
+class Fac {
+    int a;
+
+    public int maia(){
+        a = 0;
+        return a;
+    }
+
+    public static void main(String[] args){
+        Fac a;
+        a = new Fac();
+
+        io.println(a.maia());
+
+    }
+}

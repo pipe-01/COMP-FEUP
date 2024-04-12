@@ -1,0 +1,5 @@
+.method public <init>()V
+   aload_0
+   invokenonvirtual ${SUPER_NAME}/<init>()V
+   return
+.end method

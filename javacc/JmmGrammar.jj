@@ -1,0 +1,238 @@
+PARSER_PACKAGE=pt.up.fe.comp;
+PARSER_CLASS=JmmGrammarParser;
+SMART_NODE_CREATION=false;
+TOKENS_ARE_NODES=false;
+
+SKIP : " " | "\t" | "\r" | "\n" | < "//" (~["\n","\r"])* ("\n" | "\r" | "\r\n") > | < "/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/" >;
+
+TOKEN :
+	< PLUS : "+" > |
+	< MINUS : "-" > |
+	< TIMES : "*" > |
+	< DIVIDE : "/" > |
+	< IF : "if">|
+	< AND : "&&"> |
+	< OR : "||" > |
+	< LOWER: "<">|
+	< BIGGER : ">">|
+	< OPEN_PAREN : "(" > |
+	< CLOSE_PAREN : ")" > |
+	< ASSIGN : "=">|
+	< IMPORT : "import">|
+	< CLASS : "class">|
+	< EXTENDS : "extends">|
+	< DOT : ".">|
+	< OPEN_BRACKET : "{">|
+	< CLOSE_BRACKET : "}">|
+	< END_DECL : ";">|
+	< PUBLIC : "public" >|
+	< RETURN : "return" >|
+	< STATIC : "static" >|
+	< VOID : "void" >|
+	< MAIN : "main">|
+	< STRING : "String" >|
+	< INT: "int">|
+	< BOOLEAN : "boolean">|
+	< OPEN_RECT_PAREN: "[">|
+	< CLOSE_RECT_PAREN: "]">|
+	< ELSE : "else">|
+	< WHILE : "while">|
+	< LENGTH : "length">|
+	< TRUE : "true">|
+	< FALSE : "false">|
+	< THIS : "this">|
+	< NEW : "new">|
+	< COMMA : ",">|
+	< EXCLAMATION : "!">|
+	< SYMBOL : ["A" - "Z", "a" - "z", "_", "$"](["0" - "9" ,"A" - "Z", "a" - "z","_", "$"])* > |
+    < INTEGER : ("-")? "0"|(["1"-"9"] (["0" - "9"])*) >
+;
+
+
+
+
+Start: (ImportDeclaration)* ClassDeclaration <EOF>;
+
+ImportDeclaration:
+	(
+		<IMPORT> Identifier
+		(
+			<DOT> Identifier
+		)*
+		<END_DECL>
+	)
+;
+
+ClassDeclaration:
+<CLASS> (IdentifierAux) ({ jjtThis.put("name", lastConsumedToken.getImage()); }) [(<EXTENDS> IdentifierAux) ({ jjtThis.put("extends", lastConsumedToken.getImage()); })] <OPEN_BRACKET> (VarDeclaration)* (MethodDeclaration)* <CLOSE_BRACKET>
+;
+
+
+VarDeclaration:
+	SCAN 2 Type Identifier <END_DECL>;
+
+LocalVarDeclaration:
+    SCAN 2 Type Identifier <END_DECL>;
+
+
+
+MethodInterior:
+    (
+        SCAN 2(LocalVarDeclaration)
+    )*
+    (
+        Statement
+    )*
+    (<RETURN> (Expression #ReturnValue) <END_DECL>)?;
+
+
+
+MethodDeclaration:
+
+	SCAN 2 <PUBLIC> (<STATIC> { jjtThis.put("isStatic", "true"); }) ((<VOID> { jjtThis.put("name", lastConsumedToken.getImage ()); }) #ReturnType) (<MAIN> { jjtThis.put("name", lastConsumedToken.getImage ()); }) #Id
+	<OPEN_PAREN>  Param <CLOSE_PAREN>
+	<OPEN_BRACKET>
+	MethodInterior
+	<CLOSE_BRACKET>|
+
+	<PUBLIC> ( ReturnType ) ((IdentifierAux { jjtThis.put("name", lastConsumedToken.getImage ()); }) #Id) <OPEN_PAREN>
+	( (TypeParam Identifier #Param(2)) (( <COMMA> ((TypeParam ) Identifier) #Param(2)) )*)?
+	<CLOSE_PAREN>
+	<OPEN_BRACKET>
+	 MethodInterior
+	<CLOSE_BRACKET>
+
+;
+
+Param:
+    ( ((<STRING> { jjtThis.put("name", lastConsumedToken.getImage ()); }) (<OPEN_RECT_PAREN> <CLOSE_RECT_PAREN> { jjtThis.put("isArray", "true"); })) #TypeParam )  Identifier
+;
+
+//TODO Otimizar o que está abaixo. Colocar três iguais foi o que me veio à cabeça. TypeParam, Type e ReturnType são todos iguais, mas diferentes para deter nomes diferentes na ast
+
+TypeParam:
+	SCAN 2 (<INT> { jjtThis.put("name", lastConsumedToken.getImage ()); jjtThis.put("isArray", "true"); } <OPEN_RECT_PAREN> <CLOSE_RECT_PAREN> )|
+	(<INT> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(<BOOLEAN> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(<STRING> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(IdentifierAux { jjtThis.put("name", lastConsumedToken.getImage ()); })
+;
+
+Type:
+	SCAN 2 (<INT> { jjtThis.put("name", lastConsumedToken.getImage ()); jjtThis.put("isArray", "true"); } <OPEN_RECT_PAREN> <CLOSE_RECT_PAREN> )|
+	(<INT> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(<BOOLEAN> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(<STRING> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(IdentifierAux { jjtThis.put("name", lastConsumedToken.getImage ()); })
+;
+
+ReturnType:
+	SCAN 2 (<INT> { jjtThis.put("name", lastConsumedToken.getImage ()); jjtThis.put("isArray", "true"); } <OPEN_RECT_PAREN> <CLOSE_RECT_PAREN> )|
+	(<INT> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(<BOOLEAN> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(<STRING> { jjtThis.put("name", lastConsumedToken.getImage ()); }) |
+	(IdentifierAux { jjtThis.put("name", lastConsumedToken.getImage ()); })
+;
+
+Statement #void:
+	<OPEN_BRACKET>
+	(
+		Statement
+	)*
+	<CLOSE_BRACKET> |
+	<IF> <OPEN_PAREN> Expression <CLOSE_PAREN> (Statement #IfStatements) <ELSE> (Statement #ElseStatements) #IfElseStatement(3) |
+	<WHILE> <OPEN_PAREN> (Expression ) <CLOSE_PAREN> (Statement #WhileStatements ) #WhileLoop(2) |
+	SCAN 2 Identifier <ASSIGN> (Expression #AssignmentValue )<END_DECL> #Assignment(2)|
+	SCAN 2 (Identifier <OPEN_RECT_PAREN> ({jjtThis.put("op", "index"); }) Expression <CLOSE_RECT_PAREN>) #BinOp(2) <ASSIGN> (Expression #AssignmentValue ) <END_DECL> #Assignment(2)|
+	Expression <END_DECL>
+;
+
+Expression #void:
+	RelationalExpression ( ("&&" RelationalExpression) ({ jjtThis.put("op", "and"); }) #BinOp(2))*
+;
+
+
+RelationalExpression #void:
+	AdditiveExpression ( ("<" AdditiveExpression) ({ jjtThis.put("op", "lower"); }) #BinOp(2))*
+;
+
+
+AdditiveExpression #void:
+    MultiplicativeExpression ( ("+" MultiplicativeExpression) ({ jjtThis.put("op", "add"); }) #BinOp(2) |
+    ("-" MultiplicativeExpression) ({ jjtThis.put("op", "sub"); }) #BinOp(2))*
+;
+
+MultiplicativeExpression #void:
+	Factor ( ("*" Factor) ({ jjtThis.put("op", "mult"); }) #BinOp(2) |
+    ("/" Factor) ({ jjtThis.put("op", "div"); }) #BinOp(2))*
+;
+
+IntegerLiteral:
+	< INTEGER > { jjtThis.put("value", lastConsumedToken.getImage()); }
+;
+
+Identifier:
+	(<SYMBOL> { jjtThis.put("name", lastConsumedToken.getImage()); })
+;
+
+IdentifierAux #void:
+	<SYMBOL>
+;
+
+
+Factor #void:
+    TerminalExpr ( ContinueExpr)*
+;
+
+
+ContinueExpr #void:
+    <OPEN_BRACKET> Expression <CLOSE_BRACKET> |
+    SCAN 2 <DOT> (<LENGTH> #Len)  #MemberCall(2)  |
+    (<DOT>  Member) |
+    (<OPEN_RECT_PAREN> ({jjtThis.put("op", "index"); }) Expression <CLOSE_RECT_PAREN>) #BinOp(2)|
+    Expression
+;
+
+Member #void:
+    Identifier <OPEN_PAREN>  MemberArguments
+;
+
+MemberArguments #void:
+    <CLOSE_PAREN> #MemberCall(2)|
+    ([Expression (<COMMA> Expression)*] #Arguments) #MemberCall(3) <CLOSE_PAREN>
+;
+
+
+TerminalExpr #void:
+    IntegerLiteral |
+    <TRUE> #BoolTrue |
+    <FALSE> #BoolFalse |
+    <THIS> #SelfThis |
+    SCAN 2 (<NEW> <INT> <OPEN_RECT_PAREN> Expression <CLOSE_RECT_PAREN>) #ArrayAssign(1)|
+    <NEW> Identifier #Constructor(1) <OPEN_PAREN> <CLOSE_PAREN> |
+    (<EXCLAMATION> ({jjtThis.put("op", "!"); })Expression) #UnaryOp(1) |
+    (<OPEN_PAREN> ({jjtThis.put("op", "()"); })Expression <CLOSE_PAREN>) #UnaryOp(1)|
+    Identifier
+;
+
+// Injections for the implementation of JmmNode+
+// Since this is injected into BaseNode, it affects only non-terminals
+INJECT BaseNode :
+        import pt.up.fe.comp.jmm.ast.JmmNode;
+        import pt.up.fe.comp.jmm.ast.AJmmNode;
+        import pt.up.fe.specs.util.SpecsCollections;
+        extends AJmmNode
+{
+    @Override
+    public List<JmmNode> getChildren() {
+        return SpecsCollections.cast(children(), JmmNode.class);
+    }
+    @Override
+    public void add(JmmNode child, int index) {
+        if (child instanceof Node) {
+            addChild(index, (Node) child);
+        } else {
+            throw new RuntimeException("Node " + child + " is not a Node.");
+        }
+    }
+}
